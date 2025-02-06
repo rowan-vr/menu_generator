@@ -3,15 +3,15 @@ use itertools::Itertools;
 const MAX_LINE_LENGTH: usize = 19;
 const MAX_LINE_COUNT: usize = 14;
 
-const CATEGORY_COLOUR: &str = "#ffaaff";
+const CATEGORY_COLOUR: &str = "#355C7D";
 const MENU_ITEM_COLOUR: &str = "#000000";
-const MENU_ITEM_PRICE_COLOUR: &str = "#00ff00";
+const MENU_ITEM_PRICE_COLOUR: &str = "#F88800";
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 struct MenuItem {
     category: String,
-    menu_item: String,
-    sell_price: i32,
+    name: String,
+    sellPrice: i32,
 }
 
 fn main() {
@@ -45,9 +45,9 @@ fn main() {
     let mut line_count = 0;
     let mut page_count = 0;
     let mut catagory_pages = std::collections::HashMap::new();
-    let mut command = "/give @p written_book{pages:[".to_string();
-    let page_start = "'[\"\",";
-    let page_end = "]',";
+    let mut command = "/give @p written_book[written_book_content={pages:[".to_string();
+    let page_start = "\"[{\\\"text\\\":\\\"\\\"},";
+    let page_end = "]\",";
     let mut last_was_custom = true;
     for catagory_name in catagories {
         let menu_items = match catagory_menu_items.get(&catagory_name) {
@@ -101,7 +101,7 @@ fn main() {
         }
 
         command.push_str(&format!(
-            "{{\"text\":\"{}\\\\n\\\\n\",\"color\":\"{}\"}},",
+            "{{\\\"text\\\":\\\"{}\\\\n\\\", \\\"color\\\":\\\"{}\\\",\\\"bold\\\": true}},",
             catagory_name, CATEGORY_COLOUR
         ));
         line_count += 2;
@@ -109,7 +109,7 @@ fn main() {
         catagory_pages.insert(catagory_name.clone(), page_count);
 
         for menu_item in menu_items {
-            let line = format!("{}: ¥{}", menu_item.menu_item.trim(), menu_item.sell_price);
+            let line = format!("{}: ¥{}", menu_item.name.trim(), menu_item.sellPrice);
             if line.len() > MAX_LINE_LENGTH {
                 line_count += 1;
             }
@@ -122,41 +122,41 @@ fn main() {
                 line_count = 0;
             }
             command.push_str(&format!(
-                "{{\"text\":\"{}: \",\"color\":\"{}\"}},",
-                menu_item.menu_item.trim(),
+                "{{\\\"text\\\":\\\"{}: \\\", \\\"color\\\":\\\"{}\\\"}},",
+                menu_item.name.trim(),
                 MENU_ITEM_COLOUR
             ));
             command.push_str(&format!(
-                "{{\"text\":\"¥{}\\\\n\",\"color\":\"{}\"}},",
-                menu_item.sell_price, MENU_ITEM_PRICE_COLOUR
+                "{{\\\"text\\\":\\\"¥{}\\\\n\\\", \\\"color\\\":\\\"{}\\\"}},",
+                menu_item.sellPrice, MENU_ITEM_PRICE_COLOUR
             ));
             // println!("{}", line);
             line_count += 1;
         }
         // add a new line
         command.push_str(&format!(
-            "{{\"text\":\"\\\\n\",\"color\":\"{}\"}},",
+            "{{\\\"text\\\":\\\"\\\\n\\\", \\\"color\\\":\\\"{}\\\"}},",
             MENU_ITEM_COLOUR
         ));
         line_count += 1;
     }
 
-    let mut index_page = "{\"text\":\"La\",\"italic\":true,\"color\":\"#008C45\"},{\"text\":\" Casa\",\"italic\":true,\"color\":\"gray\"},{\"text\":\" Nostra\",\"italic\":true,\"color\":\"#CD212A\"},{\"text\":\"\\\\n             \",\"color\":\"reset\",\"italic\":true},{\"text\":\"Menu Index\",\"italic\":true,\"color\":\"#355C7D\"},{\"text\":\"\\\\n-=-=-=-=-=-=-=-=-=-\\\\n\",\"color\":\"reset\"}".to_string();
+    let mut index_page = "{\\\"text\\\":\\\"La\\\",\\\"italic\\\":true,\\\"color\\\":\\\"#008C45\\\"},{\\\"text\\\":\\\" Casa\\\",\\\"italic\\\":true,\\\"color\\\":\\\"gray\\\"},{\\\"text\\\":\\\" Nostra\\\",\\\"italic\\\":true,\\\"color\\\":\\\"#CD212A\\\"},{\\\"text\\\":\\\"\\\\n             \\\",\\\"color\\\":\\\"black\\\",\\\"italic\\\":true},{\\\"text\\\":\\\"Menu Index\\\",\\\"italic\\\":true,\\\"color\\\":\\\"#355C7D\\\"},{\\\"text\\\":\\\"\\\\n-=-=-=-=-=-=-=-=-=-\\\\n\\\",\\\"color\\\":\\\"black\\\"}".to_string();
     for (catagory_name, page) in catagory_pages.iter().sorted_by(|a, b| a.1.cmp(b.1)) {
         index_page.push_str(&format!(
-            ",{{\"text\":\"{}\",\"color\":\"#51074A\",\"clickEvent\":{{\"action\":\"change_page\",\"value\":{}}}}},{{\"text\":\"\\\\n\",\"color\":\"reset\"}}",
+            ",{{\\\"text\\\":\\\"{}\\\",\\\"color\\\":\\\"#51074A\\\",\\\"clickEvent\\\":{{\\\"action\\\":\\\"change_page\\\",\\\"value\\\":\\\"{}\\\"}}}},{{\\\"text\\\":\\\"\\\\n\\\",\\\"color\\\":\\\"black\\\"}}",
             catagory_name, page+2
         ));
     }
-    index_page.push_str(",{\"text\":\"\\\\nRight Click to navigate\",\"color\":\"reset\"}");
+    index_page.push_str(",{\\\"text\\\":\\\"Click to navigate\\\",\\\"color\\\":\\\"#7393B3\\\", \\\"italic\\\": true}");
     command = command.replace("INDEX_PAGE", &index_page);
 
     command = command.strip_suffix(',').unwrap().to_string();
     command.push(']');
     if !last_was_custom {
-        command.push_str("']");
+        command.push_str("\"]");
     }
-    command.push_str(",title:\"La Casa Nostra menu\",author:\"zegevlier\"}");
+    command.push_str(",\"title\":\"La Casa Nostra menu\",\"author\":\"zegevlier\"}]");
 
     println!("{}", command);
 
